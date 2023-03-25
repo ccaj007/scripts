@@ -1,0 +1,61 @@
+ 
+function get-userloggedin {
+    [CmdletBinding()]
+    param(
+    $ComputerName = $env:COMPUTERNAME
+    )
+$Explorers = Get-WmiObject -ComputerName $ComputerName -class Win32_Process -filter "Name = 'explorer.exe'"
+$user = $Explorers.GetOwner().User
+write-host($user)
+}
+ 
+function remove-oldfiles 
+{
+<#
+ 
+.DESCRIPTION
+removes old logfiles from machine
+ 
+.EXAMPLE
+invoke-command -computername remote_computer -scriptblock ${function:remove-oldfiles} -argumentlist 14
+ 
+.INPUTS
+days to remove old files
+ 
+#>    
+    param ([String]$days = 28)
+ 
+ 
+    $path = ("C:\temp\MavLog\Archive",
+            "d:\temp\mavlog\archive")
+   
+    
+    $cmd = ((Get-ChildItem -Path $path -Recurse |
+            where {$_.lastwritetime -lt (get-date).adddays(-$days) -and -not $_.psicontainer}))
+    
+    $cmd
+    write-Host("do you want to delete the files? ") -ForegroundColor Red
+    $ans = (read-host).ToUpper()
+    
+    if ($ans -eq 'Y') { 
+        write-host("deleting files...") 
+        $cmd | remove-item -Force
+        }
+}
+ 
+function Teams-Clear-Cache
+{
+write-host "This will close outlook and teams, clear teams cache and then relaunc apps" -for Red
+start-sleep 10
+ 
+stop-process -name outlook -force
+stop-process -name teams -force
+ 
+cd $env:APPDATA\Microsoft\teams
+#Get-ChildItem $env:APPDATA\Microsoft\teams\* -Recurse | Remove-Item -Force
+&cmd.exe /c rd /s /q $env:APPDATA\Microsoft\teams
+ 
+start-process -filepath "outlook.exe" -WorkingDirectory "${env:ProgramFiles(x86)}\Microsoft Office\root\Office16"
+start-process -FilePath "teams.exe" -WorkingDirectory "${env:localappdata}\Microsoft\Teams\current"              
+}
+ 
